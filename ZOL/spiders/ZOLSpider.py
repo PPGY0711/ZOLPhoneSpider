@@ -373,7 +373,7 @@ class ZolSpider(scrapy.Spider):
             j += 1
             i = 0
 
-        #这个函数有问题
+        #传回去下载图片的函数处理item会出错。
         if j == totalj:
             item['phonePic'] = imgitem['imgUrls']
             if articleurl == prefix:
