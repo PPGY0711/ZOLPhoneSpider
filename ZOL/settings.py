@@ -30,7 +30,8 @@ MONGO_COLL = 'phoneList'
 MONGO_USER = 'phoneYelp_rw'
 MONGO_PSW = '123456'
 
-HTTPERROR_ALLOWED_CODES = [404]
+#splash服务器地址
+SPLASH_URL = 'http://127.0.0.1:8050'
 
 #FEED_EXPORT_FIELDS = ["phoneID", "phoneName", "phoneParam", "phonePic"]
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -64,15 +65,24 @@ CONCURRENT_REQUESTS_PER_IP = 200
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    'ZOL.middlewares.ZolSpiderMiddleware': 543,
-#}
+SPIDER_MIDDLEWARES = {
+    #'ZOL.middlewares.ZolSpiderMiddleware': 543,
+    'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
+}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'ZOL.middlewares.ZolDownloaderMiddleware': 300,
+    'scrapy_splash.SplashCookiesMiddleware': 723,
+    'scrapy_splash.SplashMiddleware': 725,
+    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 }
+
+# 去重过滤器
+DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+# 使用Splash的Http缓存
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html

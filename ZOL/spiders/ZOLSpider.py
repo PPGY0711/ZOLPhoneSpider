@@ -6,6 +6,7 @@ from ..items import imgItem
 import copy
 import time
 from lxml import etree
+from scrapy_splash import SplashRequest
 
 class ZolSpider(scrapy.Spider):
     name = 'Zol'
@@ -345,10 +346,10 @@ class ZolSpider(scrapy.Spider):
         item = response.meta['item']
         imgitem = response.meta['imgitem']
         #每个link调用一次response去搜该图片的jpg链接，返回来的图片是url，单张图片处理函数入口。
-        yield scrapy.Request(imgitem['imgUrls'][imgitem['imgCate'][0]][0],
-                             meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
-                             'i': copy.deepcopy(0), 'j': copy.deepcopy(0), 'articleurl': copy.deepcopy(articleurl)},
-                             callback=self.single_pic_parse, dont_filter=True)
+        yield SplashRequest(imgitem['imgUrls'][imgitem['imgCate'][0]][0],
+                            meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
+                            'i': copy.deepcopy(0), 'j': copy.deepcopy(0), 'articleurl': copy.deepcopy(articleurl)},
+                            callback=self.single_pic_parse, dont_filter=True, args={'wait': 2})
 
     def single_pic_parse(self, response):
         """图片单页面处理"""
@@ -361,13 +362,14 @@ class ZolSpider(scrapy.Spider):
         totalj = len(imgitem['imgCate'])
         totali = len(imgitem['imgUrls'][imgitem['imgCate'][j]])
         i += 1
+
         #这样读不是这个手机的图，这是推荐的其他手机的图。
         #这里要处理JS加载的页面
-        picurl = str(response.xpath('//div[@class="like-img"][1]/img/@src').extract_first()).replace('_400x300', '')
-        #print(imgitem['imgPhoneID'], totali, totalj, i, j, picurl)
-        #print(picurl)
+
+        picurl = str(response.xpath('//*[@id="j_Image"]/@src').extract_first())
+
         imgitem['imgUrls'][imgitem['imgCate'][j]][i-1] = picurl
-        if i == totali - 1:
+        if i == totali:
             j += 1
             i = 0
 
@@ -382,13 +384,13 @@ class ZolSpider(scrapy.Spider):
                                      , 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.news_parse_page, dont_filter=True)
         else:
-            print(imgitem['imgPhoneID'], totalj,  j, totali, i, picurl)
-            print(response.url)
-            print(response.body.decode("GBK"))
-            yield scrapy.Request(imgitem['imgUrls'][imgitem['imgCate'][j]][i],
-                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
-                                 'i': copy.deepcopy(i), 'j': copy.deepcopy(j), 'articleurl': copy.deepcopy(articleurl)},
-                                 callback=self.single_pic_parse, dont_filter=True)
+            #print(imgitem['imgPhoneID'], totalj,  j, totali, i, picurl)
+            #print(response.url)
+            #print(response.body.decode("GBK"))
+            yield SplashRequest(imgitem['imgUrls'][imgitem['imgCate'][j]][i],
+                                meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
+                                'i': copy.deepcopy(i), 'j': copy.deepcopy(j), 'articleurl': copy.deepcopy(articleurl)},
+                                callback=self.single_pic_parse, dont_filter=True, args={'wait': 2})
 
     def item_parse(self, response):
         """返回Item"""
@@ -396,6 +398,6 @@ class ZolSpider(scrapy.Spider):
         imgitem = response.meta['imgitem']
         for i in range(2):
             if i == 0:
-                print(item)
+                yield item
             else:
-                print(imgitem)
+                yield imgitem

@@ -53,11 +53,12 @@ class ImgDownLoadPipeline(ImagesPipeline):
         if isinstance(item, imgItem):
             for j in range(len(item['imgCate'])):
                 for i in range(1, len(item['imgUrls'][item['imgCate'][j]]) + 1):
-                    imgName = item['imgCate'][j] + '_' + str(i)
-                    #print("---------------------HERE!---------------------")
-                    #print(item['imgUrls'][item['imgCate'][j]][i-1])
-                    yield Request(item['imgUrls'][item['imgCate'][j]][i-1],
-                                  meta={'name': imgName, 'phoneName': item['imgPhone']})
+                    print(item['imgUrls'][item['imgCate'][j]][i-1], item['imgUrls'][item['imgCate'][j]][i-1] is None)
+                    if item['imgUrls'][item['imgCate'][j]][i-1] is not None:
+                        imgName = item['imgUrls'][item['imgCate'][j]][i-1].split('/')[-1]
+                        print(imgName)
+                        yield Request(item['imgUrls'][item['imgCate'][j]][i-1],
+                                      meta={'name': imgName, 'phoneName': item['imgPhone']})
 
     def file_path(self, request, response=None, info=None):
         name = response.meta['name']
