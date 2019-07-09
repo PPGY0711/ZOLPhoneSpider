@@ -21,7 +21,19 @@ class ZolItem(scrapy.Item):
     phoneEval = scrapy.Field()      #专业评测
     #news
     phoneNews = scrapy.Field()      #热门新闻
+    #score
+    phoneGrade = scrapy.Field()     #手机评分
+    phoneCTimes = scrapy.Field()    #打分人数
 
+class imgItem(scrapy.Item):
+    #for phone pictures download
+    imgPhoneID = scrapy.Field()     #手机ID
+
+    imgUrls = scrapy.Field()        #图片链接
+
+    imgCate = scrapy.Field()        #图片类别
+
+    imgPhone = scrapy.Field()       #文件夹名
 
 
 

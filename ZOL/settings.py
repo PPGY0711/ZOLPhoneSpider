@@ -30,6 +30,8 @@ MONGO_COLL = 'phoneList'
 MONGO_USER = 'phoneYelp_rw'
 MONGO_PSW = '123456'
 
+HTTPERROR_ALLOWED_CODES = [404]
+
 #FEED_EXPORT_FIELDS = ["phoneID", "phoneName", "phoneParam", "phonePic"]
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'ZOL (+http://www.yourdomain.com)'
@@ -43,7 +45,7 @@ CONCURRENT_REQUESTS = 200
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 0.2
+#DOWNLOAD_DELAY = 0.5
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 200
 CONCURRENT_REQUESTS_PER_IP = 200
@@ -83,7 +85,10 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'ZOL.pipelines.ZolPipeline': 300,
     #'ZOL.pipelines.MongoPipeline': 400,
+    'ZOL.pipelines.ImgDownLoadPipeline': 100,
 }
+#设置图片存储目录
+IMAGES_STORE = 'D:\Scrapy\ZOL_imgs'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
