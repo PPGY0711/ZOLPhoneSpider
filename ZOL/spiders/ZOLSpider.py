@@ -15,6 +15,7 @@ class ZolSpider(scrapy.Spider):
     start_urls = [url.format(str(offset))]
 
     def parse(self, response):
+        """分页面爬取一页所有的手机信息"""
         #first session
         prefix = 'http://detail.zol.com.cn'
         #print("11--------------------------------------------")
@@ -29,7 +30,7 @@ class ZolSpider(scrapy.Spider):
             #print(link)
             yield scrapy.Request(prefix+str(link), meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)}
                                  , callback=self.first_parse_page, dont_filter=True)
-
+        """下一页"""
         #second session
         m_page = 1
         #print("12--------------------------------------------")
@@ -40,6 +41,7 @@ class ZolSpider(scrapy.Spider):
             yield scrapy.Request(self.url.format(str(self.offset)), callback=self.parse, dont_filter=True)
 
     def first_parse_page(self, response):
+        """准备爬取参数页"""
         prefix = 'http://detail.zol.com.cn'
         #print("21--------------------------------------------")
         urls = response.xpath('//*[@id="_j_tag_nav"]/ul')
@@ -56,7 +58,7 @@ class ZolSpider(scrapy.Spider):
                                  , callback=self.param_parse_page, dont_filter=True)
 
     def param_parse_page(self, response):
-
+        """爬取参数页，准备爬取图片页"""
         condition = response.xpath('//h1[@class="product-model__name"]').extract_first()
         imgitem = response.meta['imgitem']
         item = response.meta['item']
@@ -68,6 +70,10 @@ class ZolSpider(scrapy.Spider):
             else:
                 item['phoneName'] = [pName]
             item['phoneID'] = self.itemcnt
+            imgitem['imgPhone'] = ''
+            imgitem['imgPhoneID'] = self.itemcnt
+            imgitem['imgCate'] = []
+            # imgitem['imgUrls'] = {}
             self.itemcnt += 1
 
             node_list = response.xpath('//div[@class="detailed-parameters"]')
@@ -134,10 +140,22 @@ class ZolSpider(scrapy.Spider):
                 yield scrapy.Request(picurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.pic_parse_page, dont_filter=True)
         except Exception as e:
-            yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item)},
-                                 callback=self.item_parse, dont_filter=True)
+            try:
+                picindex = navitems.index('评测行情')
+                picurl = response.xpath('//*[@id="_j_tag_nav"]/ul/li[{}]/a'.format(str(picindex + 2)))
+                suffix = picurl.xpath('@href').extract_first()
+                if suffix is not None:
+                    picurl = prefix+str(suffix)
+                    imgitem['imgUrls'] = {}
+                    #print(paramurl == 'http://detail.zol.com.cnhttp//detail.zol.com.cn')
+                    yield scrapy.Request(picurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
+                                         callback=self.news_parse_page, dont_filter=True)
+            except Exception as e2:
+                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item)},
+                                     callback=self.item_parse, dont_filter=True)
 
     def pic_parse_page(self, response):
+        """准备爬取图片页"""
         #print("41---------------------------------")
         prefix = 'http://detail.zol.com.cn'
 
@@ -174,12 +192,15 @@ class ZolSpider(scrapy.Spider):
                                                     'activeNum': copy.deepcopy(activeNum),
                                                     'imgitem': copy.deepcopy(imgitem)},
                                                      callback=self.pic_parse_following_page, dont_filter=True)
-            elif tmpath.xpath('//div[@class="pics-category"]') != []:
+            elif tmpath.xpath('//ul[@class="pics-category-list color-cate-list"]/li[1]/a/@href') != []:
                 url = prefix + tmpath.xpath('//li[1]/a/@href').extract_first()
-
-                yield scrapy.Request(url, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem),
-                                                'picdivide': copy.deepcopy(picdivide)},
+                activeNum = 1
+                yield scrapy.Request(url, meta={'item': copy.deepcopy(item), 'articleurl': copy.deepcopy(pageurl),
+                                                'picdivide': copy.deepcopy(picdivide),
+                                                'activeNum': copy.deepcopy(activeNum),
+                                                'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.pic_parse_following_page, dont_filter=True)
+
             #直接在当前页处理图片链接
             else:
                 typeName = response.xpath('//div[@class="section-header"]/h3/text()').extract_first()
@@ -199,16 +220,14 @@ class ZolSpider(scrapy.Spider):
                 else:
                     imgitem['imgUrls'][str(typeName).strip()] = pics
                     item['phonePic'] = {str(typeName).strip(): pics}
-                if pageurl != prefix:
-                    yield scrapy.Request(pageurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)
-                                         , 'articleurl': copy.deepcopy(pageurl)},
-                                         callback=self.news_parse_page, dont_filter=True)
-                else:
-                    yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item),
-                                                           'imgitem': copy.deepcopy(imgitem)},
-                                         callback=self.img_download_parse, dont_filter=True)
+                #全部图片处理完了再抓新闻
+                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item)
+                                     , 'articleurl': copy.deepcopy(pageurl),
+                                     'imgitem': copy.deepcopy(imgitem)},
+                                     callback=self.img_download_parse, dont_filter=True)
 
     def pic_parse_following_page(self, response):
+        """爬取图片页颜色标签下每种颜色的前五张图片所在网址，不足五张则存所有网址链接"""
         #print('51--------------------------------------')
         prefix = 'http://detail.zol.com.cn'
         articleurl = response.meta['articleurl']
@@ -226,7 +245,7 @@ class ZolSpider(scrapy.Spider):
         imgitem = response.meta['imgitem']
         picdivide = response.meta['picdivide']
 
-        #爬不到颜色图
+        #只爬颜色分类图
         if typeName is not None:
             #print(item['phoneName'], typeName, colorNames)
             link = response.xpath('//ul[@class="picture-list clearfix"]')
@@ -235,7 +254,6 @@ class ZolSpider(scrapy.Spider):
             for link in links:
                 pics.append(str(link))
 
-#这里有问题 phonePic没了，对github上面的程序调整一下，另外下载问题要解决，最后把图片全存到数据库。
             #图片选取：没有分类的选前五张，不足五张选全部
             imgitem['imgPhoneID'] = item['phoneID']
             imgitem['imgPhone'] = str(item['phoneID']) + '_' + str(item['phoneName'][0])
@@ -246,25 +264,20 @@ class ZolSpider(scrapy.Spider):
             else:
                 imgitem['imgUrls'][str(typeName).strip()] = pics
                 picdivide[str(typeName).strip()] = pics
-            item['phonePic'] = picdivide
+            item['phonePic'] = imgitem['imgUrls']
         if activeNum + 1 <= len(wholecate):
             url = prefix + wholecate[activeNum].xpath('a/@href').extract_first()
-            # activeNum += 1
-            #print(activeNum, typeName, len(wholecate))
-            #print(url)
             yield scrapy.Request(url, meta={'item': copy.deepcopy(item), 'articleurl': copy.deepcopy(articleurl),
                                             'picdivide': copy.deepcopy(picdivide), 'imgitem': copy.deepcopy(imgitem),
                                             'activeNum': copy.deepcopy(activeNum)},
                                  callback=self.pic_parse_following_page, dont_filter=True)
         else:
-            if articleurl != prefix:
-                yield scrapy.Request(articleurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
-                                     callback=self.news_parse_page, dont_filter=True)
-            else:
-                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
-                                     callback=self.img_download_parse, dont_filter=True)
+            yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem),
+                                                   'articleurl': copy.deepcopy(articleurl)},
+                                 callback=self.img_download_parse, dont_filter=True)
 
     def news_parse_page(self, response):
+        """爬取新闻、评测等信息"""
         prefix = 'http://detail.zol.com.cn'
         #评测行情页面：可能的条目有“专业评测”，“热门新闻”
         item = response.meta['item']
@@ -272,7 +285,6 @@ class ZolSpider(scrapy.Spider):
         condition = response.xpath('//div[@class="product-model page-title clearfix"]/h1/text()').extract_first()
 
         if condition != []:
-
             nodeIds = response.xpath('//div[@class="section-article"]/div/@id').extract()
             if 'bbsDoc' in nodeIds:
                 del nodeIds[nodeIds.index('bbsDoc')]
@@ -323,35 +335,67 @@ class ZolSpider(scrapy.Spider):
                     item[itemArtDic[nodeIds[i]]] = articleInfos
 
         yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
-                             callback=self.img_download_parse, dont_filter=True)
+                             callback=self.item_parse, dont_filter=True)
 
     def img_download_parse(self, response):
+        """爬取图片名，准备下载图片"""
         prefix = prefix = 'http://detail.zol.com.cn'
         #这个函数实现item和imgitem中每个图片链接都换成.jpg
+        articleurl = response.meta['articleurl']
         item = response.meta['item']
         imgitem = response.meta['imgitem']
-        #每个link调用一次response去搜该图片的jpg链接，返回来的图片是url。
-        for j in range(len(imgitem['imgCate'])):
-            for i in range(1, len(imgitem['imgUrls'][imgitem['imgCate'][j]]) + 1):
-                imgName = imgitem['imgCate'][j] + '_' + str(i)
-                # print("---------------------HERE!---------------------")
-                #print(imgitem['imgUrls'][imgitem['imgCate'][j]][i - 1])
-                yield scrapy.Request(imgitem['imgUrls'][imgitem['imgCate'][j]][i - 1],
-                                     meta={'imgitem': copy.deepcopy('imgitem'),
-                                           'i': copy.deepcopy(i), 'j': copy.deepcopy(j)},
-                                     callback=self.single_pic_parse, dont_filter=True)
-        item['phonePic'] = imgitem['imgPhone']
-        for i in range(2):
-            if i == 0:
-                yield item
-            else:
-                if imgitem is not None:
-                    yield imgitem
+        #每个link调用一次response去搜该图片的jpg链接，返回来的图片是url，单张图片处理函数入口。
+        yield scrapy.Request(imgitem['imgUrls'][imgitem['imgCate'][0]][0],
+                             meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
+                             'i': copy.deepcopy(0), 'j': copy.deepcopy(0), 'articleurl': copy.deepcopy(articleurl)},
+                             callback=self.single_pic_parse, dont_filter=True)
 
     def single_pic_parse(self, response):
+        """图片单页面处理"""
+        prefix = 'http://detail.zol.com.cn'
         imgitem = response.meta['imgitem']
+        item = response.meta['item']
+        articleurl = response.meta['articleurl']
         i = int(response.meta['i'])
         j = int(response.meta['j'])
-        picurl = response.xpath('//*[@id="j_Image"]/@src').extract_first()
-        print(picurl)
+        totalj = len(imgitem['imgCate'])
+        totali = len(imgitem['imgUrls'][imgitem['imgCate'][j]])
+        i += 1
+        #这样读不是这个手机的图，这是推荐的其他手机的图。
+        #这里要处理JS加载的页面
+        picurl = str(response.xpath('//div[@class="like-img"][1]/img/@src').extract_first()).replace('_400x300', '')
+        #print(imgitem['imgPhoneID'], totali, totalj, i, j, picurl)
+        #print(picurl)
         imgitem['imgUrls'][imgitem['imgCate'][j]][i-1] = picurl
+        if i == totali - 1:
+            j += 1
+            i = 0
+
+        #这个函数有问题
+        if j == totalj:
+            item['phonePic'] = imgitem['imgUrls']
+            if articleurl == prefix:
+                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
+                                     callback=self.item_parse, dont_filter=True)
+            else:
+                yield scrapy.Request(url=articleurl, meta={'item': copy.deepcopy(item)
+                                     , 'imgitem': copy.deepcopy(imgitem)},
+                                     callback=self.news_parse_page, dont_filter=True)
+        else:
+            print(imgitem['imgPhoneID'], totalj,  j, totali, i, picurl)
+            print(response.url)
+            print(response.body.decode("GBK"))
+            yield scrapy.Request(imgitem['imgUrls'][imgitem['imgCate'][j]][i],
+                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
+                                 'i': copy.deepcopy(i), 'j': copy.deepcopy(j), 'articleurl': copy.deepcopy(articleurl)},
+                                 callback=self.single_pic_parse, dont_filter=True)
+
+    def item_parse(self, response):
+        """返回Item"""
+        item = response.meta['item']
+        imgitem = response.meta['imgitem']
+        for i in range(2):
+            if i == 0:
+                print(item)
+            else:
+                print(imgitem)

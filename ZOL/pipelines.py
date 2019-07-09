@@ -55,7 +55,7 @@ class ImgDownLoadPipeline(ImagesPipeline):
                 for i in range(1, len(item['imgUrls'][item['imgCate'][j]]) + 1):
                     imgName = item['imgCate'][j] + '_' + str(i)
                     #print("---------------------HERE!---------------------")
-                    print(item['imgUrls'][item['imgCate'][j]][i-1])
+                    #print(item['imgUrls'][item['imgCate'][j]][i-1])
                     yield Request(item['imgUrls'][item['imgCate'][j]][i-1],
                                   meta={'name': imgName, 'phoneName': item['imgPhone']})
 
@@ -63,6 +63,6 @@ class ImgDownLoadPipeline(ImagesPipeline):
         name = response.meta['name']
         subFile = name[:str(name).index('_')]
         mainFile = response.meta['phoneName']
-        print(mainFile, subFile, name)
+        #print(mainFile, subFile, name)
         filename = u'{0}/{1}/{2}'.format(mainFile, subFile, name)
         return filename
