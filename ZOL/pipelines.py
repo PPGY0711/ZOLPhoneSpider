@@ -22,7 +22,6 @@ class ZolPipeline(object):
         str = json.dumps(dict(item), ensure_ascii=False) + '\n'
         print(str)
         self.file.write(str)
-        yield(item)
 
 
     def open_spider(self, spider):
@@ -30,6 +29,7 @@ class ZolPipeline(object):
 
     def close_spider(self, spider):
         self.file.close()
+
 
 class MongoPipeline(object):
     def __init__(self, databaseIp='127.0.0.1', databasePort=27017,
@@ -39,16 +39,14 @@ class MongoPipeline(object):
         self.db.authenticate(user, password)
 
     def process_item(self, item, spider):
-        for Item in item:
-            postItem = dict(item)
-            self.db.phoneList.insert(postItem) #collection name = phoneList
-            yield Item
+
+        print(item)
+        postItem = dict(item)
+        self.db.phoneList.insert(postItem) #collection name = phoneList
 
 
-#实现这两个流水线先后工作
 #实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹
-
-
+#已弃用，图片无须下载到本地。
 class ImgDownLoadPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
@@ -59,7 +57,8 @@ class ImgDownLoadPipeline(ImagesPipeline):
                 for image_url in valuelist:
                     imgName = image_url.split('/')[-1]
                     #print(image_url, imgName, Item['phoneName'][0])
-                    # Unsolved: 这里一直是NoneType，但是在ZOLSpider当中测试爬取一条图片链接是可以返回的。
+                    # Unsolved: 这里Request一直是返回不了，抛出NoneType错误
+                    # 但是在ZOLSpider当中测试爬取一条图片链接可以返回图片对象
                     yield scrapy.Request(image_url, callback=self.file_path,
                                          meta={'name': copy.deepcopy(imgName),
                                          'phoneName': copy.deepcopy(Item['phoneName'][0])}, dont_filter=True)

@@ -35,7 +35,7 @@ class ZolSpider(scrapy.Spider):
 
         """下一页"""
         #second session
-        m_page = 1
+        m_page = 104
         #print("12--------------------------------------------")
         if self.offset < m_page:
             self.offset += 1
@@ -86,14 +86,21 @@ class ZolSpider(scrapy.Spider):
                 infotable = node_list.xpath('table[{}]'.format(str(j)))
                 infoitemheader = []
                 infoitemctnt = []
+
+                #增加字符串进一步过滤条件
+
                 for i in range(1, len(infotable.xpath('tr'))+1):
                     if infotable.xpath('tr[{}]/th/span[@*]/text()'.format(str(i))).extract() != []:
-                        infoitemheader.append(re.sub(r'^,','',re.sub(r',{2,}', ',', ','
+                        # print(infotable.xpath('tr[{}]/th/span[@*]/text()'
+                        #                     .format(str(i))).extract())
+                        infoitemheader.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
                                             .join(infotable.xpath('tr[{}]/th/span[@*]/text()'
                                             .format(str(i))).extract())
                                             .replace('，', ',').replace('>', '').replace('＞', '')
                                             .replace('\r\n', ',').strip())))
                     elif infotable.xpath('tr[{}]/th/a[@*]/text()'.format(str(i))).extract() != []:
+                        # print(infotable.xpath('tr[{}]/th/a[@*]/text()'
+                        #                     .format(str(i))).extract())
                         infoitemheader.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
                                             .join(infotable.xpath('tr[{}]/th/a[@*]/text()'
                                             .format(str(i))).extract())
@@ -101,13 +108,17 @@ class ZolSpider(scrapy.Spider):
                                             .replace('\r\n', ',').strip())))
                     if infotable.xpath('tr[{}]/td/span[@*]/text()'.format(str(i))).extract() != [] and \
                         infotable.xpath('tr[{}]/td/span/a[@*]/text()'.format(str(i))).extract() == []:
+                        # print(','.join(infotable.xpath('tr[{}]/td/span[@*]/text()'
+                        #                     .format(str(i))).extract()))
                         infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
                                             .join(infotable.xpath('tr[{}]/td/span[@*]/text()'
-                                            .format(str(i))).extract())\
+                                            .format(str(i))).extract())
                                             .replace('，', ',').replace('>', '').replace('＞', '')
-                                            .replace('\r\n', ',').strip())))
+                                            .replace('\r\n', ',').replace('\xa0x1', ',').strip())))
                     elif infotable.xpath('tr[{}]/td/span[@*]/text()'.format(str(i))).extract() == [] and \
                         infotable.xpath('tr[{}]/td/span/a[@*]/text()'.format(str(i))).extract() != []:
+                        # print(','.join(infotable.xpath('tr[{}]/td/span/a[@*]/text()'
+                        #                     .format(str(i))).extract()))
                         infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
                                             .join(infotable.xpath('tr[{}]/td/span/a[@*]/text()'
                                             .format(str(i))).extract())
@@ -115,12 +126,17 @@ class ZolSpider(scrapy.Spider):
                                             .replace('\r\n', ',').strip())))
                     elif infotable.xpath('tr[{}]/td/span[@*]/text()'.format(str(i))).extract() != [] and \
                         infotable.xpath('tr[{}]/td/span/a[@*]/text()'.format(str(i))).extract() != []:
-                        infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
+                        """ 去掉“更多XXX＞”，“手机性能排行>”，“进入官网>>>”，
+                        “查看外观>”，“续航测试>”，“样张秀>”，“高清像素手机>”，“高像素自拍手机>”"""
+                        infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',',
+                                            re.sub('更多[\u4e00-\u9fa5_a-zA-Z0-9]+＞', '', ','
                                             .join(infotable.xpath('tr[{}]/td/span[@*]/text()'
-                                            .format(str(i))).extract()).replace('，', ',')
-                                            .replace('>', '').replace('＞', '').replace('\r\n', ',').strip() +
+                                            .format(str(i))).extract())).replace('，', ',').replace('手机性能排行>', '')
+                                            .replace('样张秀', '').replace('进入官网>>>', '').replace('查看外观>', '')
+                                            .replace('高清像素手机>', '').replace('高像素自拍手机', '')
+                                            .replace('续航测试>', '').replace('>', '').replace('\r\n', ',').strip() +
                                             ','.join(infotable.xpath('tr[{}]/td/span/a[@*]/text()'
-                                            .format(str(i))).extract())\
+                                            .format(str(i))).extract())
                                             .replace('，', ',').replace('>', '').replace('＞', '')
                                             .replace('\r\n', '').strip())))
                     paramdicts[infocategory[j-1]] = dict(zip(infoitemheader, infoitemctnt))
@@ -154,7 +170,7 @@ class ZolSpider(scrapy.Spider):
                     yield scrapy.Request(picurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
                                          callback=self.news_parse_page, dont_filter=True)
             except Exception as e2:
-                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item)},
+                yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.item_parse, dont_filter=True)
 
     def pic_parse_page(self, response):
@@ -373,7 +389,6 @@ class ZolSpider(scrapy.Spider):
             j += 1
             i = 0
 
-        #这个函数有问题
         if j == totalj:
             item['phonePic'] = imgitem['imgUrls']
             if articleurl == prefix:
@@ -397,8 +412,11 @@ class ZolSpider(scrapy.Spider):
         for j in range(len(imgitem['imgCate'])):
             while 'None' in imgitem['imgUrls'][imgitem['imgCate'][j]]:
                 imgitem['imgUrls'][imgitem['imgCate'][j]].remove('None')
+            if imgitem['imgUrls'][imgitem['imgCate'][j]] == []:
+                del imgitem['imgUrls'][imgitem['imgCate'][j]]
         item['phonePic'] = imgitem['imgUrls']
-        yield item
+        # yield item
+        print(item)
 
     def test_pic_parse(self, response):
         """检查图片下载问题"""
