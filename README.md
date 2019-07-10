@@ -8,7 +8,7 @@
 开发语言：Python3  
 系统：Windows/MacOS/Linux  
 依赖库：scrapy/scrapy-splash/lxml  
-服务：Docker 18.09.2 
+服务：Docker 18.09.2  
 数据库：MongoDB  
 
 ## 数据结构
