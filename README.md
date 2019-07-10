@@ -1,14 +1,14 @@
 # ZOLphoneSpider
 
-使用scrapy开发的ZOL爬虫，爬取ZOL热门手机板块的手机信息。
+使用scrapy开发的ZOL爬虫，爬取ZOL热门手机板块的手机信息。  
 
 ## 运行环境
 
-开发语言：Python3
-系统：Windows/MacOS/Linux
-依赖库：scrapy/scrapy-splash/lxml
-服务：Docker 18.09.2
-数据库：MongoDB
+开发语言：Python3  
+系统：Windows/MacOS/Linux  
+依赖库：scrapy/scrapy-splash/lxml  
+服务：Docker 18.09.2 
+数据库：MongoDB  
 
 ## 数据结构
 
@@ -29,5 +29,5 @@
 | 评分人数 | phoneCTimes | Not Null      | Int      | 记录已为该手机打分人数                                       |
 
 ## 使用说明
-针对ZOL（中关村在线）热门手机板块开发的scrapy爬虫，由scrapy-splash提供JS渲染服务。
-由test.py提供爬虫入口，而非命令行输入scrapy crawl 'SpiderName' 运行。
+针对ZOL（中关村在线）热门手机板块开发的scrapy爬虫，由scrapy-splash提供JS渲染服务。  
+由test.py提供爬虫入口，而非命令行输入scrapy crawl 'SpiderName' 运行。  
