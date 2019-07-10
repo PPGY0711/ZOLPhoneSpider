@@ -13,6 +13,8 @@ class ZolItem(scrapy.Item):
     #basicInfo
     phoneID = scrapy.Field()        #手机编号
     phoneName = scrapy.Field()      #手机名称
+    phoneBrand = scrapy.Field()     #手机品牌
+    phoneIcon = scrapy.Field()      #产品图例
     #Parameters
     phoneParam = scrapy.Field()     #手机参数
     #colors

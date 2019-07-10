@@ -30,6 +30,8 @@ MONGO_COLL = 'phoneList'
 MONGO_USER = 'phoneYelp_rw'
 MONGO_PSW = '123456'
 
+HTTPERROR_ALLOWED_CODES = [505]
+
 #splash服务器地址
 SPLASH_URL = 'http://127.0.0.1:8050'
 
@@ -46,7 +48,7 @@ CONCURRENT_REQUESTS = 200
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 0.2
+DOWNLOAD_DELAY = 0.5
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 200
 CONCURRENT_REQUESTS_PER_IP = 200
@@ -93,10 +95,9 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    #'ZOL.pipelines.ZolPipeline': 100,
+    'ZOL.pipelines.ZolPipeline': 100,
     'ZOL.pipelines.MongoPipeline': 200,
     #'ZOL.pipelines.ImgDownLoadPipeline': 300,
-    #'scrapy.pipeline.images.ImagesPipeline': 1
 }
 #设置图片存储目录
 IMAGES_STORE = r'D:\Scrapy\ZOL_imgs'

@@ -8,6 +8,7 @@ import time
 from lxml import etree
 from scrapy_splash import SplashRequest
 
+
 class ZolSpider(scrapy.Spider):
     name = 'Zol'
     offset = 1
@@ -19,28 +20,33 @@ class ZolSpider(scrapy.Spider):
         """分页面爬取一页所有的手机信息"""
         #first session
         prefix = 'http://detail.zol.com.cn'
-        #print("11--------------------------------------------")
-        links = response.xpath('//div[@class="pic-box SP"]/a/@href').extract()
 
+        links = response.xpath('//div[@class="pic-box SP"]/a/@href').extract()
+        boxs = response.xpath('//div[@class="pic-box SP"]')
         # yield scrapy.Request(url='http://2f.zol-img.com.cn/product/196/275/ceUI3ooKZ99LU.jpg',
         #                      callback=self.test_pic_parse, dont_filter=True)
-        for link in links:
+        #for i in range(1): #for test pipelines
+        for i in range(1, len(links)+1):
             item = ZolItem()
             #评分相关选项，默认值全为0
             item['phoneGrade'] = 0
             item['phoneCTimes'] = 0
             imgitem = imgItem()
-            yield scrapy.Request(prefix+str(link), meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)}
+            #处理商品缩略图
+            item['phoneIcon'] = boxs[i-1].xpath('@data-rel').extract_first().replace('_280x210', '')
+            yield scrapy.Request(prefix+str(links[i-1]), meta={'item': copy.deepcopy(item),
+                                 'imgitem': copy.deepcopy(imgitem)}
                                  , callback=self.first_parse_page, dont_filter=True)
 
         """下一页"""
         #second session
         m_page = 104
-        #print("12--------------------------------------------")
+        #m_page = 1 #for test
+
         if self.offset < m_page:
             self.offset += 1
-            time.sleep(5) #scrapy one page and stop 5 seconds
-            #print(self.url.format(str(self.offset)))
+            time.sleep(10) #scrapy one page and stop 5 seconds
+            print('handling for page {}'.format(str(self.offset)))
             yield scrapy.Request(self.url.format(str(self.offset)), callback=self.parse, dont_filter=True)
 
     def first_parse_page(self, response):
@@ -49,16 +55,22 @@ class ZolSpider(scrapy.Spider):
         #print("21--------------------------------------------")
         urls = response.xpath('//*[@id="_j_tag_nav"]/ul')
         navitems = urls.xpath('li/a/text()').extract()
-        paramindex = navitems.index('参数')
-        paramurl = response.xpath('//*[@id="_j_tag_nav"]/ul/li[{}]/a'.format(str(paramindex + 2)))
-        suffix = paramurl.xpath('@href').extract_first()
-        if suffix is not None:
-            paramurl = prefix+str(suffix)
-            item = response.meta['item']
-            imgitem = response.meta['imgitem']
-            item['phonePic'] = {}
-            yield scrapy.Request(paramurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)}
-                                 , callback=self.param_parse_page, dont_filter=True)
+        print(navitems)
+        item = response.meta['item']
+        imgitem = response.meta['imgitem']
+        try:
+            paramindex = navitems.index('参数')
+            paramurl = response.xpath('//*[@id="_j_tag_nav"]/ul/li[{}]/a'.format(str(paramindex + 2)))
+            suffix = paramurl.xpath('@href').extract_first()
+            if suffix is not None:
+                paramurl = prefix+str(suffix)
+                item['phonePic'] = {}
+                yield scrapy.Request(paramurl, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)}
+                                     , callback=self.param_parse_page, dont_filter=True)
+        except Exception as e:
+            yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
+                                 callback=self.item_parse, dont_filter=True)
+
 
     def param_parse_page(self, response):
         """爬取参数页，准备爬取图片页"""
@@ -69,14 +81,15 @@ class ZolSpider(scrapy.Spider):
             pName = response.xpath('//h1[@class="product-model__name"]/text()').extract_first()[:-2]
             if response.xpath('//h2[@class="product-model__alias"]/text()').extract_first() is not None:
                 alias = response.xpath('//h2[@class="product-model__alias"]/text()').extract_first()
-                item['phoneName'] = [pName, alias]
+                item['phoneName'] = ','.join([pName, alias])
             else:
-                item['phoneName'] = [pName]
+                item['phoneName'] = pName
             item['phoneID'] = self.itemcnt
+            item['phoneBrand'] = response.xpath('//a[@id="_j_breadcrumb"]/text()').extract_first()[:-2]
             imgitem['imgPhone'] = ''
             imgitem['imgPhoneID'] = self.itemcnt
             imgitem['imgCate'] = []
-            # imgitem['imgUrls'] = {}
+            imgitem['imgUrls'] = {}
             self.itemcnt += 1
 
             node_list = response.xpath('//div[@class="detailed-parameters"]')
@@ -128,23 +141,26 @@ class ZolSpider(scrapy.Spider):
                         infotable.xpath('tr[{}]/td/span/a[@*]/text()'.format(str(i))).extract() != []:
                         """ 去掉“更多XXX＞”，“手机性能排行>”，“进入官网>>>”，
                         “查看外观>”，“续航测试>”，“样张秀>”，“高清像素手机>”，“高像素自拍手机>”"""
-                        infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',',
-                                            re.sub('更多[\u4e00-\u9fa5_a-zA-Z0-9]+＞', '', ','
-                                            .join(infotable.xpath('tr[{}]/td/span[@*]/text()'
-                                            .format(str(i))).extract())).replace('，', ',').replace('手机性能排行>', '')
-                                            .replace('样张秀', '').replace('进入官网>>>', '').replace('查看外观>', '')
-                                            .replace('高清像素手机>', '').replace('高像素自拍手机', '')
-                                            .replace('续航测试>', '').replace('>', '').replace('\r\n', ',').strip() +
-                                            ','.join(infotable.xpath('tr[{}]/td/span/a[@*]/text()'
-                                            .format(str(i))).extract())
-                                            .replace('，', ',').replace('>', '').replace('＞', '')
-                                            .replace('\r\n', '').strip())))
+                        infostr1 = ','.join(infotable.xpath('tr[{}]/td/span[@*]/text()'
+                                            .format(str(i))).extract()).replace('，', ',')\
+                                            .replace('>', '').replace('＞', '').replace('\r\n', '').strip()
+
+                        infostr2 = ','.join(infotable.xpath('tr[{}]/td/span/a[@*]/text()'
+                                    .format(str(i))).extract()).replace('，', ',').replace('手机性能排行', '')\
+                                    .replace('样张秀', '').replace('进入官网', '').replace('查看外观', '')\
+                                    .replace('高清像素手机', '').replace('高像素自拍手机', '')\
+                                    .replace('续航测试', '').replace('>', '').replace('\r\n', ',').strip()
+                        if '＞' in infostr2:
+                            infostr2 = ''
+                        #print(re.sub(r'^,', '', re.sub(r',{2,}', ',', infostr1+infostr2.strip())))
+                        infoitemctnt.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', infostr1+infostr2.strip())))
+
                     paramdicts[infocategory[j-1]] = dict(zip(infoitemheader, infoitemctnt))
             item['phoneParam'] = paramdicts
 
         #picture spider
         prefix = 'http://detail.zol.com.cn'
-        #print("21--------------------------------------------")
+
         urls = response.xpath('//div[@id="_j_tag_nav"]/ul')
         navitems = urls.xpath('li/a/text()').extract()
         try:
@@ -175,7 +191,7 @@ class ZolSpider(scrapy.Spider):
 
     def pic_parse_page(self, response):
         """准备爬取图片页"""
-        #print("41---------------------------------")
+
         prefix = 'http://detail.zol.com.cn'
 
         #颜色页面种类：有两种分类的；仅有颜色分类；两者都没有
@@ -247,7 +263,7 @@ class ZolSpider(scrapy.Spider):
 
     def pic_parse_following_page(self, response):
         """爬取图片页颜色标签下每种颜色的前五张图片所在网址，不足五张则存所有网址链接"""
-        #print('51--------------------------------------')
+
         prefix = 'http://detail.zol.com.cn'
         articleurl = response.meta['articleurl']
         wholecate = response.xpath('//div[@class="cate-item color-cate-item"]//li')
@@ -336,6 +352,8 @@ class ZolSpider(scrapy.Spider):
                         artRecord['articleLink'] = allInfo.xpath('a/@href').extract_first()
                         artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')\
                             .extract_first()
+                        artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src').extract_first()\
+                                                                .replace('_200x150', '')
                         artRecord['articlePara'] = allInfo.xpath('p/text()').extract_first()
                         artRecord['articleDate'] = allInfo\
                             .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')\
@@ -358,7 +376,7 @@ class ZolSpider(scrapy.Spider):
 
     def img_download_parse(self, response):
         """爬取图片名，准备下载图片"""
-        prefix = prefix = 'http://detail.zol.com.cn'
+        # prefix = prefix = 'http://detail.zol.com.cn'
         #这个函数实现item和imgitem中每个图片链接都换成.jpg
         articleurl = response.meta['articleurl']
         item = response.meta['item']
@@ -415,8 +433,8 @@ class ZolSpider(scrapy.Spider):
             if imgitem['imgUrls'][imgitem['imgCate'][j]] == []:
                 del imgitem['imgUrls'][imgitem['imgCate'][j]]
         item['phonePic'] = imgitem['imgUrls']
-        # yield item
-        print(item)
+        yield item
+        # print(item)
 
     def test_pic_parse(self, response):
         """检查图片下载问题"""

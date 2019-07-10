@@ -22,7 +22,7 @@ class ZolPipeline(object):
         str = json.dumps(dict(item), ensure_ascii=False) + '\n'
         print(str)
         self.file.write(str)
-
+        yield item
 
     def open_spider(self, spider):
         pass
@@ -40,9 +40,10 @@ class MongoPipeline(object):
 
     def process_item(self, item, spider):
 
-        print(item)
-        postItem = dict(item)
-        self.db.phoneList.insert(postItem) #collection name = phoneList
+        for Item in item:
+            print(Item)
+            postItem = dict(Item)
+            self.db.phoneList.insert(postItem) #collection name = phoneList
 
 
 #实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹
