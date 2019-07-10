@@ -66,7 +66,7 @@ CONCURRENT_REQUESTS_PER_IP = 200
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 SPIDER_MIDDLEWARES = {
-    #'ZOL.middlewares.ZolSpiderMiddleware': 543,
+    'ZOL.middlewares.ZolSpiderMiddleware': 543,
     'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
 }
 
@@ -93,12 +93,26 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'ZOL.pipelines.ZolPipeline': 300,
-    #'ZOL.pipelines.MongoPipeline': 400,
-    'ZOL.pipelines.ImgDownLoadPipeline': 100,
+    'ZOL.pipelines.ZolPipeline': 100,
+    #'ZOL.pipelines.MongoPipeline': 200,
+    'ZOL.pipelines.ImgDownLoadPipeline': 300,
+    #'scrapy.pipeline.images.ImagesPipeline': 1
 }
 #设置图片存储目录
-IMAGES_STORE = 'D:\Scrapy\ZOL_imgs'
+IMAGES_STORE = r'D:\Scrapy\ZOL_imgs'
+
+# 避免下载最近30天已经下载过的图像内容
+IMAGES_EXPIRES = 30
+
+# 设置图片缩略图
+IMAGES_THUMBS = {
+    'small': (50, 50),
+    'big': (250, 250),
+}
+
+# 图片过滤器，最小高度和宽度，低于此尺寸不下载
+IMAGES_MIN_HEIGHT = 110
+IMAGES_MIN_WIDTH = 110
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

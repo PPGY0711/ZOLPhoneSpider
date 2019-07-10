@@ -7,20 +7,22 @@
 import codecs
 import json
 import pymongo
-from .items import ZolItem, imgItem
 import re
+import scrapy
+import copy
+from scrapy.exceptions import DropItem
 from scrapy.pipelines.images import ImagesPipeline
-from scrapy import Request
+
 
 class ZolPipeline(object):
     def __init__(self):
         self.file = codecs.open(filename='parameter.json', mode='w+', encoding='utf-8')
 
     def process_item(self, item, spider):
-        if isinstance(item, ZolItem):
-            str = json.dumps(dict(item), ensure_ascii=False) + '\n'
-            print(str)
-            self.file.write(str)
+        str = json.dumps(dict(item), ensure_ascii=False) + '\n'
+        print(str)
+        self.file.write(str)
+        yield(item)
 
 
     def open_spider(self, spider):
@@ -37,41 +39,43 @@ class MongoPipeline(object):
         self.db.authenticate(user, password)
 
     def process_item(self, item, spider):
-        if isinstance(item, ZolItem):
+        for Item in item:
             postItem = dict(item)
             self.db.phoneList.insert(postItem) #collection name = phoneList
-            return item
+            yield Item
 
 
 #实现这两个流水线先后工作
 #实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹
-#图片选取标准：每种手机在其颜色分类当中每个分类选取5张图，不足者取全部。
+
 
 class ImgDownLoadPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
         """处理imgitem中的图片链接和下载"""
-        if isinstance(item, imgItem):
-            for j in range(len(item['imgCate'])):
-                for i in range(1, len(item['imgUrls'][item['imgCate'][j]]) + 1):
-                    print(item['imgUrls'][item['imgCate'][j]][i-1], item['imgUrls'][item['imgCate'][j]][i-1] is None)
-                    if item['imgUrls'][item['imgCate'][j]][i-1] is not None:
-                        imgName = item['imgUrls'][item['imgCate'][j]][i-1].split('/')[-1]
-                        print(imgName)
-                        yield Request(item['imgUrls'][item['imgCate'][j]][i-1],
-                                      meta={'name': imgName, 'phoneName': item['imgPhone']})
+        for Item in item:
+            #print(Item)
+            for key, valuelist in Item['phonePic'].items():
+                for image_url in valuelist:
+                    imgName = image_url.split('/')[-1]
+                    #print(image_url, imgName, Item['phoneName'][0])
+                    # Unsolved: 这里一直是NoneType，但是在ZOLSpider当中测试爬取一条图片链接是可以返回的。
+                    yield scrapy.Request(image_url, callback=self.file_path,
+                                         meta={'name': copy.deepcopy(imgName),
+                                         'phoneName': copy.deepcopy(Item['phoneName'][0])}, dont_filter=True)
 
     def file_path(self, request, response=None, info=None):
         """分文件夹储存"""
+        print(request.url)
         name = response.meta['name']
-        subFile = name[:str(name).index('_')]
-        mainFile = response.meta['phoneName']
-        #print(mainFile, subFile, name)
-        filename = u'{0}/{1}/{2}'.format(mainFile, subFile, name)
+        mainFile = re.sub(r'[？\\*|“<>:/]', '', response.meta['phoneName'])
+        print(mainFile, name)
+        filename = u'full/{0}/{1}'.format(mainFile, name)
         return filename
 
     def item_completed(self, results, item, info):
-        """是否下载成功"""
-        if not results[0][0]:
-            raise DropItem('download failure.')
+        print(results)
+        image_paths = [x['path'] for ok, x in results if ok]
+        if not image_paths:
+            raise DropItem("Item contains no images")
         return item

@@ -16,7 +16,7 @@ class ZolItem(scrapy.Item):
     #Parameters
     phoneParam = scrapy.Field()     #手机参数
     #colors
-    phonePic = scrapy.Field()       #手机图片
+    phonePic = scrapy.Field()       #图片链接
     #evaluation
     phoneEval = scrapy.Field()      #专业评测
     #news
@@ -28,11 +28,8 @@ class ZolItem(scrapy.Item):
 class imgItem(scrapy.Item):
     #for phone pictures download
     imgPhoneID = scrapy.Field()     #手机ID
-
     imgUrls = scrapy.Field()        #图片链接
-
     imgCate = scrapy.Field()        #图片类别
-
     imgPhone = scrapy.Field()       #文件夹名
 
 
