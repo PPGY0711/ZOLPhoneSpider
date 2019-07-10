@@ -84,10 +84,9 @@ class ZolSpider(scrapy.Spider):
                 infotable = node_list.xpath('table[{}]'.format(str(j)))
                 infoitemheader = []
                 infoitemctnt = []
-                #这里处理文字的功能还需要晚上，有一些没必要的信息在这里没过滤掉，比如“查看外观”之类的
                 for i in range(1, len(infotable.xpath('tr'))+1):
                     if infotable.xpath('tr[{}]/th/span[@*]/text()'.format(str(i))).extract() != []:
-                        infoitemheader.append(re.sub(r'^,', '', re.sub(r',{2,}', ',', ','
+                        infoitemheader.append(re.sub(r'^,','',re.sub(r',{2,}', ',', ','
                                             .join(infotable.xpath('tr[{}]/th/span[@*]/text()'
                                             .format(str(i))).extract())
                                             .replace('，', ',').replace('>', '').replace('＞', '')
@@ -374,7 +373,7 @@ class ZolSpider(scrapy.Spider):
             j += 1
             i = 0
 
-        #返回去下载图片的函数有问题
+        #这个函数有问题
         if j == totalj:
             item['phonePic'] = imgitem['imgUrls']
             if articleurl == prefix:
@@ -385,7 +384,9 @@ class ZolSpider(scrapy.Spider):
                                      , 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.news_parse_page, dont_filter=True)
         else:
-
+            #print(imgitem['imgPhoneID'], totalj,  j, totali, i, picurl)
+            #print(response.url)
+            #print(response.body.decode("GBK"))
             yield SplashRequest(imgitem['imgUrls'][imgitem['imgCate'][j]][i],
                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
                                 'i': copy.deepcopy(i), 'j': copy.deepcopy(j), 'articleurl': copy.deepcopy(articleurl)},
