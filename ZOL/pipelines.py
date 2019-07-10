@@ -50,6 +50,7 @@ class MongoPipeline(object):
 class ImgDownLoadPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
+        """处理imgitem中的图片链接和下载"""
         if isinstance(item, imgItem):
             for j in range(len(item['imgCate'])):
                 for i in range(1, len(item['imgUrls'][item['imgCate'][j]]) + 1):
@@ -61,9 +62,16 @@ class ImgDownLoadPipeline(ImagesPipeline):
                                       meta={'name': imgName, 'phoneName': item['imgPhone']})
 
     def file_path(self, request, response=None, info=None):
+        """分文件夹储存"""
         name = response.meta['name']
         subFile = name[:str(name).index('_')]
         mainFile = response.meta['phoneName']
         #print(mainFile, subFile, name)
         filename = u'{0}/{1}/{2}'.format(mainFile, subFile, name)
         return filename
+
+    def item_completed(self, results, item, info):
+        """是否下载成功"""
+        if not results[0][0]:
+            raise DropItem('download failure.')
+        return item
