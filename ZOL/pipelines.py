@@ -12,6 +12,7 @@ import scrapy
 import copy
 from scrapy.exceptions import DropItem
 from scrapy.pipelines.images import ImagesPipeline
+from scrapy.conf import settings
 
 
 class ZolPipeline(object):
@@ -19,8 +20,8 @@ class ZolPipeline(object):
         self.file = codecs.open(filename='parameter.json', mode='w+', encoding='utf-8')
 
     def process_item(self, item, spider):
+        print(item['phoneID'])
         str = json.dumps(dict(item), ensure_ascii=False) + '\n'
-        print(str)
         self.file.write(str)
         yield item
 
@@ -32,22 +33,22 @@ class ZolPipeline(object):
 
 
 class MongoPipeline(object):
-    def __init__(self, databaseIp='127.0.0.1', databasePort=27017,
-                 user='phoneYelp_rw', password='123456', mongodbName='phoneYelp'):
+    def __init__(self, databaseIp=settings['MONGO_HOST'], databasePort=settings['MONGO_PORT'],
+                 user=settings['MONGO_USER'], password=settings['MONGO_PSW'], mongodbName=settings['MONGO_DB']):
         client = pymongo.MongoClient(databaseIp, databasePort)
         self.db = client[mongodbName]
         self.db.authenticate(user, password)
 
-    def process_item(self, item, spider):
 
+    def process_item(self, item, spider):
         for Item in item:
             print(Item)
             postItem = dict(Item)
-            self.db.phoneList.insert(postItem) #collection name = phoneList
+            self.db.phoneList.insert(postItem)  # collection name = phoneList
 
 
-#实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹
-#已弃用，图片无须下载到本地。
+# 实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹
+# 已弃用，图片无须下载到本地。
 class ImgDownLoadPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
@@ -57,7 +58,7 @@ class ImgDownLoadPipeline(ImagesPipeline):
             for key, valuelist in Item['phonePic'].items():
                 for image_url in valuelist:
                     imgName = image_url.split('/')[-1]
-                    #print(image_url, imgName, Item['phoneName'][0])
+                    # print(image_url, imgName, Item['phoneName'][0])
                     # Unsolved: 这里Request一直是返回不了，抛出NoneType错误
                     # 但是在ZOLSpider当中测试爬取一条图片链接可以返回图片对象
                     yield scrapy.Request(image_url, callback=self.file_path,
