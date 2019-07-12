@@ -13,10 +13,9 @@ from scrapy_redis.spiders import RedisSpider
 class ZolSpider(RedisSpider):
     """改用RedisSpider"""
     name = 'Zol'
-    offset = 1
+    # offset = 1
     itemcnt = 1
-    # 'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_1.html'
-    url = 'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'
+    #url = 'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'
     # start_urls = [url.format(str(offset))]
     redis_key = 'Zol:start_urls'
 
@@ -27,31 +26,30 @@ class ZolSpider(RedisSpider):
 
         links = response.xpath('//div[@class="pic-box SP"]/a/@href').extract()
         boxs = response.xpath('//div[@class="pic-box SP"]')
-        # yield scrapy.Request(url='http://2f.zol-img.com.cn/product/196/275/ceUI3ooKZ99LU.jpg',
-        #                      callback=self.test_pic_parse, dont_filter=True)
-        # for i in range(1): #for test pipelines
-        for i in range(1, len(links)+1):
+
+        for i in range(1,len(links) + 1):  # for test
             item = ZolItem()
             # 评分相关选项，默认值全为0
             item['phoneGrade'] = 0
             item['phoneCTimes'] = 0
             imgitem = imgItem()
             # 处理商品缩略图
+            #print(len(boxs), len(links))
             item['phoneIcon'] = boxs[i-1].xpath('@data-rel').extract_first().replace('_280x210', '')
             yield scrapy.Request(prefix+str(links[i-1]), meta={'item': copy.deepcopy(item),
                                  'imgitem': copy.deepcopy(imgitem)}
                                  , callback=self.first_parse_page, dont_filter=True)
 
-        """下一页"""
         # second session
-        m_page = 1
-        # m_page = 1 #for test
-
-        if self.offset < m_page:
-            self.offset += 1
-            # time.sleep(10) # scrapy one page and stop 10 seconds
-            print('handling for page {}'.format(str(self.offset)))
-            yield scrapy.Request(self.url.format(str(self.offset)), callback=self.parse, dont_filter=True)
+        # """下一页，用于scrapy爬虫，非分布式"""
+        # m_page = 1
+        # # m_page = 1 #for test
+        #
+        # if self.offset < m_page:
+        #     self.offset += 1
+        #     # time.sleep(10) # scrapy one page and stop 10 seconds
+        #     print('handling for page {}'.format(str(self.offset)))
+        #     yield scrapy.Request(self.url.format(str(self.offset)), callback=self.parse, dont_filter=True)
 
     def first_parse_page(self, response):
         """准备爬取参数页"""
@@ -214,7 +212,7 @@ class ZolSpider(RedisSpider):
                 pageurl = prefix + \
                           str(response.xpath(
                               '//*[@id="_j_tag_nav"]/ul/li[{}]/a/@href'.format(str(pageindex + 2))).extract_first())
-                print(pageurl)
+                # print(pageurl)
             except Exception as e:
                 pageurl = prefix
 
@@ -332,36 +330,56 @@ class ZolSpider(RedisSpider):
             itemArtDic = {'newsDoc': 'phoneNews', 'evalDoc': 'phoneEval'}
             if len(nodeIds) != 0:
                 for i in range(len(nodeIds)):
-
                     if i == 0:
                         articleSet = response\
                             .xpath('//div[@id="' + nodeIds[i] + '"]/ul[@class="content-list"]/li[@class=" clearfix"]')\
                             .extract()
+                        page = response.xpath('//div[@class="section-article"]')
 
                     else:
-                        page = response.xpath('//div[@id="' + nodeIds[i] + '"]/textarea').extract_first()\
+                        page = '<div id="' + nodeIds[i] + '">' + \
+                               response.xpath('//div[@id="' + nodeIds[i] + '"]/textarea').extract_first()\
                             .replace('<textarea>', '').replace('</textarea>', '')
                         page = etree.HTML(page)
+                        # print(response.xpath('//div[@id="' + nodeIds[i] + '"]/textarea').extract_first()\
+                        #     .replace('<textarea>', '').replace('</textarea>', ''))
                         articleSet = page \
-                            .xpath('//div[@id="' + nodeIds[i] + '"]/ul[@class="content-list"]/li[@class=" clearfix"]') \
+                            .xpath('//ul[@class="content-list"]/li[@class=" clearfix"]')
+                        # print(etree.tostring(page).decode("GBK"))
 
                     articleNums[i] = len(articleSet)
-
+                    # print(nodeIds[i], articleNums[i])
                     articleInfos = []
                     for j in range(1, articleNums[i] + 1):
-                        artRecord = {}
-                        allInfo = response.xpath('//div[@id="' + nodeIds[i]
-                                              + '"]/ul/li[{}]'.format(str(j)))
-                        artRecord['articleID'] = j
-                        artRecord['articleLink'] = allInfo.xpath('a/@href').extract_first()
-                        artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')\
-                            .extract_first()
-                        artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src').extract_first()\
-                                                                .replace('_200x150', '')
-                        artRecord['articlePara'] = allInfo.xpath('p/text()').extract_first()
-                        artRecord['articleDate'] = allInfo\
-                            .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')\
-                            .extract_first()
+                        if i == 0:
+                            artRecord = {}
+                            allInfo = page.xpath('//div[@id="' + nodeIds[i]
+                                                 + '"]/ul/li[{}]'.format(str(j)))
+                            # print(allInfo)
+                            artRecord['articleID'] = j
+                            artRecord['articleLink'] = allInfo.xpath('a/@href').extract_first()
+                            artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')\
+                                .extract_first()
+                            artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src').extract_first()\
+                                                                    .replace('_200x150', '')
+                            artRecord['articlePara'] = allInfo.xpath('p/text()').extract_first()
+                            artRecord['articleDate'] = allInfo\
+                                .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')\
+                                .extract_first()
+                        else:
+                            artRecord = {}
+                            allInfo = page.xpath('//div[@id="' + nodeIds[i]
+                                                 + '"]/ul/li[{}]'.format(str(j)))[0]
+                            # print(allInfo)
+                            artRecord['articleID'] = j
+                            artRecord['articleLink'] = allInfo.xpath('a/@href')[0]
+                            artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')[0]
+                            artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src')[0]\
+                                                                    .replace('_200x150', '')
+                            artRecord['articlePara'] = allInfo.xpath('p/text()')[0]
+                            artRecord['articleDate'] = allInfo\
+                                .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')[0]
+
                         try:
                             artRecord['articleAuthor'] = allInfo\
                                 .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
@@ -442,14 +460,12 @@ class ZolSpider(RedisSpider):
         for j in range(len(imgitem['imgCate'])):
             while 'None' in imgitem['imgUrls'][imgitem['imgCate'][j]]:
                 imgitem['imgUrls'][imgitem['imgCate'][j]].remove('None')
-            if imgitem['imgUrls'][imgitem['imgCate'][j]] == []:
-                del imgitem['imgUrls'][imgitem['imgCate'][j]]
         piclinks = []
         for j in range(len(imgitem['imgUrls'])):
             for link in imgitem['imgUrls'][imgitem['imgCate'][j]]:
                 piclinks.append(link)
         item['phonePic'] = piclinks
-        print(item['phoneID'])
+        # print(item['phoneID'])
         yield item
         # print(item)
 
