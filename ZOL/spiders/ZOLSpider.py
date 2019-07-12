@@ -251,9 +251,9 @@ class ZolSpider(RedisSpider):
                 imgitem['imgPhoneID'] = item['phoneID']
                 imgitem['imgPhone'] = str(item['phoneID']) + '_' + str(item['phoneName'][0])
                 imgitem['imgCate'] = [str(typeName).strip()]
-                if len(pics) >= 10:
-                    imgitem['imgUrls'][str(typeName).strip()] = pics[:10]
-                    item['phonePic'] = pics[:10]
+                if len(pics) >= 5:
+                    imgitem['imgUrls'][str(typeName).strip()] = pics[:5]
+                    item['phonePic'] = pics[:5]
                 else:
                     imgitem['imgUrls'][str(typeName).strip()] = pics
                     item['phonePic'] = pics
@@ -295,9 +295,9 @@ class ZolSpider(RedisSpider):
             imgitem['imgPhoneID'] = item['phoneID']
             imgitem['imgPhone'] = str(item['phoneID']) + '_' + str(item['phoneName'][0])
             imgitem['imgCate'] = colorNames
-            if len(pics) >= 10:
-                imgitem['imgUrls'][str(typeName).strip()] = pics[:10]
-                picdivide[str(typeName).strip()] = pics[:10]
+            if len(pics) >= 5:
+                imgitem['imgUrls'][str(typeName).strip()] = pics[:5]
+                picdivide[str(typeName).strip()] = pics[:5]
             else:
                 imgitem['imgUrls'][str(typeName).strip()] = pics
                 picdivide[str(typeName).strip()] = pics
@@ -381,12 +381,11 @@ class ZolSpider(RedisSpider):
                                 .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')[0]
 
                         try:
-                            artRecord['articleAuthor'] = allInfo\
-                                .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
-                                .extract_first() \
+                            artRecord['articleAuthor'] = allInfo.xpath\
+                                ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')[0]\
                                 + " " + allInfo \
-                                .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
-                                .extract_first()
+                                .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')[0]
+
                         except Exception as e:
                             artRecord['articleAuthor'] = 'Anonymous'
                         articleInfos.append(artRecord)
