@@ -20,8 +20,8 @@ class ZolPipeline(object):
         self.file = codecs.open(filename='parameter.json', mode='w+', encoding='utf-8')
 
     def process_item(self, item, spider):
-        print(item['phoneID'])
-        str = json.dumps(dict(item), ensure_ascii=False) + '\n'
+
+        str = json.dumps(dict(item), ensure_ascii=False, indent=4, sort_keys=True) + '\n'
         self.file.write(str)
         yield item
 
@@ -39,12 +39,13 @@ class MongoPipeline(object):
         self.db = client[mongodbName]
         self.db.authenticate(user, password)
 
-
     def process_item(self, item, spider):
         for Item in item:
-            print(Item)
+            # print(Item)
             postItem = dict(Item)
-            self.db.phoneList.insert(postItem)  # collection name = phoneList
+            if self.db.phoneList.find({'phoneName': postItem['phoneName']}).count() == 0:
+                print(Item['phoneID'])
+                self.db.phoneList.insert(postItem)  # collection name = phoneList
 
 
 # 实现图片选取与下载（分类按手机名创建主文件夹，图片类别名创建子文件夹

@@ -5,8 +5,8 @@
 
 - 开发语言：Python3  
 - 系统：Windows/MacOS/Linux  
-- 依赖库：scrapy/scrapy-splash/scrapy-redis/lxml  
-- 服务：Docker 18.09.2  
+- 依赖库：scrapy/scrapy-splash/scrapy-redis/lxml/docker  
+- 服务：Docker 18.09.2(实验环境为Windows10，所安装的是Docker for Windows，其他系统请自行解决）  
 - 数据库：MongoDB  
 
 ## 数据结构
@@ -32,7 +32,7 @@
 由test.py提供爬虫入口，而非命令行输入scrapy crawl 'SpiderName' 运行。  
 引入scrapy-redis主要是为了减少爬取过程中item的损失，但也可以单机使用分布式爬取。  
   
-## 用法实现
+## 分布式爬虫用法实现
 **1.运行前安装并配置以下环境**
 - Python3
 - Scrapy
@@ -67,4 +67,26 @@ D:\Redis>redis-cli -h 127.0.0.1 -p 6379
 **7.程序结束后，清除redis中的缓存**  
 ```
 127.0.0.1:6379> flushdb
+```
+
+## IDE运行
+**1.实验环境：Pycharm 2019.1.3**  
+**2.Python多进程实现连接redis、mongoDB数据库，DockerClient实现操作Docker服务**  
+**3.如要改动redis、mongoDB连接信息，在settings.py中修改对应设置**  
+```
+#for redis connection
+REDIS_URL = None  # 一般情况可以省去
+REDIS_HOST = '127.0.0.1'  # 也可以根据情况改成 localhost
+REDIS_PORT = 6379
+REDIS_PARAMS = {
+    'password': '123456'
+}
+
+for mongoDB connection
+MONGO_HOST = '118.25.188.238'
+MONGO_PORT = 27017
+MONGO_DB = 'phoneYelp'
+MONGO_COLL = 'phoneList'
+MONGO_USER = 'phoneYelp_rw'
+MONGO_PSW = '123456'
 ```

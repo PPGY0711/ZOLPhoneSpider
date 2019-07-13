@@ -4,7 +4,6 @@ import re
 from ..items import ZolItem
 from ..items import imgItem
 import copy
-import time
 from lxml import etree
 from scrapy_splash import SplashRequest
 from scrapy_redis.spiders import RedisSpider
@@ -366,6 +365,17 @@ class ZolSpider(RedisSpider):
                             artRecord['articleDate'] = allInfo\
                                 .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')\
                                 .extract_first()
+                            try:
+                                artRecord['articleAuthor'] = allInfo.xpath \
+                                                                 (
+                                                                     'div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()').extract_first()\
+                                                             + " " + allInfo \
+                                                                 .xpath(
+                                    'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()').extract_first()
+
+                            except Exception as e:
+                                artRecord['articleAuthor'] = 'Anonymous'
+                            articleInfos.append(artRecord)
                         else:
                             artRecord = {}
                             allInfo = page.xpath('//div[@id="' + nodeIds[i]
@@ -379,16 +389,15 @@ class ZolSpider(RedisSpider):
                             artRecord['articlePara'] = allInfo.xpath('p/text()')[0]
                             artRecord['articleDate'] = allInfo\
                                 .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')[0]
+                            try:
+                                artRecord['articleAuthor'] = allInfo.xpath\
+                                    ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')[0]\
+                                    + " " + allInfo \
+                                    .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')[0]
 
-                        try:
-                            artRecord['articleAuthor'] = allInfo.xpath\
-                                ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')[0]\
-                                + " " + allInfo \
-                                .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')[0]
-
-                        except Exception as e:
-                            artRecord['articleAuthor'] = 'Anonymous'
-                        articleInfos.append(artRecord)
+                            except Exception as e:
+                                artRecord['articleAuthor'] = 'Anonymous'
+                            articleInfos.append(artRecord)
 
                     item[itemArtDic[nodeIds[i]]] = articleInfos
 
@@ -407,7 +416,9 @@ class ZolSpider(RedisSpider):
             yield SplashRequest(imgitem['imgUrls'][imgitem['imgCate'][0]][0],
                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
                                 'i': copy.deepcopy(0), 'j': copy.deepcopy(0), 'articleurl': copy.deepcopy(articleurl)},
-                                callback=self.single_pic_parse, dont_filter=True, args={'wait': 1})
+                                callback=self.single_pic_parse, dont_filter=True,
+                                args={'wait': 0.5, 'url': imgitem['imgUrls'][imgitem['imgCate'][0]][0],
+                                      'http_method': 'GET'})
         except Exception as e:
             if articleurl == prefix:
                 yield scrapy.Request(url=prefix, meta={'item': copy.deepcopy(item), 'imgitem': copy.deepcopy(imgitem)},
@@ -450,7 +461,9 @@ class ZolSpider(RedisSpider):
             yield SplashRequest(imgitem['imgUrls'][imgitem['imgCate'][j]][i],
                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
                                 'i': copy.deepcopy(i), 'j': copy.deepcopy(j), 'articleurl': copy.deepcopy(articleurl)},
-                                callback=self.single_pic_parse, dont_filter=True, args={'wait': 1})
+                                callback=self.single_pic_parse, dont_filter=True,
+                                args={'wait': 0.5, 'url': imgitem['imgUrls'][imgitem['imgCate'][j]][i],
+                                      'http_method': 'GET'})
 
     def item_parse(self, response):
         """返回Item"""
