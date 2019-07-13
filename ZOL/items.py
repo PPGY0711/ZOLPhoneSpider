@@ -34,8 +34,6 @@ class imgItem(scrapy.Item):
     # for phone pictures download
     imgPhoneID = scrapy.Field()     # 手机ID
     imgUrls = scrapy.Field()        # 图片链接
-    imgCate = scrapy.Field()        # 图片类别
-    imgPhone = scrapy.Field()       # 文件夹名
 
 
 class ExampleLoader(ItemLoader):

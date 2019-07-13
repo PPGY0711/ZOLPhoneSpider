@@ -36,7 +36,7 @@ HTTPERROR_ALLOWED_CODES = [504]
 SPLASH_URL = 'http://127.0.0.1:8050'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 200
