@@ -385,6 +385,12 @@ class ZolSpider(RedisSpider):
                                     .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()') \
                                     == []:
                                 artRecord['articleAuthor'] = 'Anonymous'
+                            else:
+                                artRecord['articleAuthor'] = allInfo.xpath\
+                                        ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
+                                        .extract_first() + allInfo \
+                                        .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
+                                        .extract_first()
                             articleInfos.append(artRecord)
 
                         else:
@@ -406,6 +412,13 @@ class ZolSpider(RedisSpider):
                                .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
                                == []:
                                 artRecord['articleAuthor'] = 'Anonymous'
+                            else:
+                                artRecord['articleAuthor'] = allInfo.xpath \
+                                    ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()') \
+                                    .extract_first() + allInfo \
+                                    .xpath(
+                                    'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()') \
+                                    .extract_first()
                             articleInfos.append(artRecord)
 
                     item[itemArtDic[nodeIds[i]]] = articleInfos
