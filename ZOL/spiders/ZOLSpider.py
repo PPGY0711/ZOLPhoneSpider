@@ -13,7 +13,7 @@ class ZolSpider(RedisSpider):
     """改用RedisSpider"""
     name = 'Zol'
     # offset = 1
-    itemcnt = 1
+    itemcnt = 4966
     # 非分布式爬虫设置start_urls
     #url = 'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'
     # start_urls = [url.format(str(offset))]
@@ -421,12 +421,14 @@ class ZolSpider(RedisSpider):
         item = response.meta['item']
         imgitem = response.meta['imgitem']
         if imgitem['imgUrls'] != {}:
-            # print(item['phoneName'], imgitem['imgUrls'])
+            print(item['phoneName'], imgitem['imgUrls'])
             # 每个link调用一次response去搜该图片的jpg链接，返回来的图片是url，单张图片处理函数入口。
             cate = []
             for key in imgitem['imgUrls'].keys():
                 cate.append(key)
             url = imgitem['imgUrls'][cate[0]][0]
+            if url[0] == '/':
+                url = prefix + url
             yield SplashRequest(url,
                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
                                       'cate': copy.deepcopy(cate), 'i': copy.deepcopy(0), 'j': copy.deepcopy(0),
@@ -477,6 +479,8 @@ class ZolSpider(RedisSpider):
                                      , 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.news_parse_page, dont_filter=True)
         else:
+            if imgitem['imgUrls'][cate[j]][i][0] == '/':
+                imgitem['imgUrls'][cate[j]][i] = prefix + imgitem['imgUrls'][cate[j]][i]
             yield SplashRequest(imgitem['imgUrls'][cate[j]][i],
                                 meta={'imgitem': copy.deepcopy(imgitem), 'item': copy.deepcopy(item),
                                       'cate': copy.deepcopy(cate), 'i': copy.deepcopy(i), 'j': copy.deepcopy(j),

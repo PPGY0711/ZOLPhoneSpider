@@ -15,20 +15,20 @@ SPIDER_MODULES = ['ZOL.spiders']
 NEWSPIDER_MODULE = 'ZOL.spiders'
 
 #for cloud
-# MONGO_HOST = '118.25.188.238'
-# MONGO_PORT = 27017
-# MONGO_DB = 'phoneYelp'
-# MONGO_COLL = 'phoneList'
-# MONGO_USER = 'phoneYelp_rw'
-# MONGO_PSW = '123456'
-
-#for local
-MONGO_HOST = '127.0.0.1'
+MONGO_HOST = '118.25.188.238'
 MONGO_PORT = 27017
 MONGO_DB = 'phoneYelp'
-# MONGO_COLL = 'phoneList'
+MONGO_COLL = 'phoneList'
 MONGO_USER = 'phoneYelp_rw'
 MONGO_PSW = '123456'
+
+#for local
+# MONGO_HOST = '127.0.0.1'
+# MONGO_PORT = 27017
+# MONGO_DB = 'phoneYelp'
+# # MONGO_COLL = 'phoneList'
+# MONGO_USER = 'phoneYelp_rw'
+# MONGO_PSW = '123456'
 
 HTTPERROR_ALLOWED_CODES = [504]
 

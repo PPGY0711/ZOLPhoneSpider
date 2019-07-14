@@ -82,7 +82,7 @@ REDIS_PARAMS = {
     'password': '123456'
 }
 
-for mongoDB connection
+#for mongoDB connection
 MONGO_HOST = '118.25.188.238'
 MONGO_PORT = 27017
 MONGO_DB = 'phoneYelp'
