@@ -13,7 +13,7 @@ class ZolSpider(RedisSpider):
     """改用RedisSpider"""
     name = 'Zol'
     # offset = 1
-    itemcnt = 4966
+    itemcnt = 1
     # 非分布式爬虫设置start_urls
     #url = 'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'
     # start_urls = [url.format(str(offset))]
@@ -415,10 +415,10 @@ class ZolSpider(RedisSpider):
                             else:
                                 artRecord['articleAuthor'] = allInfo.xpath \
                                     ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()') \
-                                    .extract_first() + allInfo \
+                                    [0] + allInfo \
                                     .xpath(
                                     'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()') \
-                                    .extract_first()
+                                    [0]
                             articleInfos.append(artRecord)
 
                     item[itemArtDic[nodeIds[i]]] = articleInfos

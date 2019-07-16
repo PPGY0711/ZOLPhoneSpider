@@ -9,7 +9,7 @@ import docker  # 管理docker容器，防止爬虫处理过程中splash对js渲�
 def process_url(wTime):
     """动态添加start_urls"""
     conn = redis.Redis(host='127.0.0.1', port=6379, password='123456')
-    for i in range(1, 201):
+    for i in range(1, 3):
         print('ready to crawl No.{} main page: '.format(str(i)) +
               'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'.format(str(i)))
         # 当前最热门手机
@@ -17,7 +17,7 @@ def process_url(wTime):
         #            'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'.format(str(i)))
         # 历史最热门手机
         conn.lpush('Zol:start_urls',
-                   'http://detail.zol.com.cn/history/subcate57_0_1_0_0_{}.html'.format(str(i)))
+                   'http://detail.zol.com.cn/cell_phone_index/subcate57_0_list_1_0_1_1_0_{}.html'.format(str(i)))
         # 每隔8分钟插入一条start_url
         time.sleep(wTime)
 
