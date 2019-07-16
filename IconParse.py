@@ -80,7 +80,7 @@ if __name__ == '__main__':
         'logos\Redmi_logo.png':'红米.png',
         'logos\ROG_logo.png':'ROG.png',
         'logos\Royole_logo.png':'柔宇.png',
-        'logos\RugGear_logo.png':'.png',
+        'logos\RugGear_logo.png':'朗界.png',
         'logos\SAGA_logo.png':'传奇.png',
         'logos\Sharp_logo.png':'夏普.png',
         'logos\Shown_logo.png':'首云.png',
