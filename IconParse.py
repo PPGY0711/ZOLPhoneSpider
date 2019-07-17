@@ -7,7 +7,7 @@ import os
 if __name__ == '__main__':
     # 品牌名称对应字典
     name2brand = {
-        r'logos\12Ke_logo.png': '21克.png',
+        r'logos\21Ke_logo.png': '21克.png',
         r'logos\360_logo.png': '360.png',
         r'logos\8848_logo.png': '8848.png',
         r'logos\AGM_logo.png': 'AGM.png',
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         r'logos\ZUK_logo.png': '联想ZUK.png'}
 
     # 链接mongodb
-    client = MongoClient('127.0.0.1', 27017)
+    client = MongoClient('118.25.188.238', 27017)
     # 取得对应的collection
     db = client['phoneYelp']
     db.authenticate('phoneYelp_rw', '123456')
