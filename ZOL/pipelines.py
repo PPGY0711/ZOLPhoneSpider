@@ -20,10 +20,9 @@ class ZolPipeline(object):
         self.file = codecs.open(filename='parameter.json', mode='w+', encoding='utf-8')
 
     def process_item(self, item, spider):
-
         str = json.dumps(dict(item), ensure_ascii=False, indent=4, sort_keys=True) + '\n'
+        print(str)
         self.file.write(str)
-        yield item
 
     def open_spider(self, spider):
         pass

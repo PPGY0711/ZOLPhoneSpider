@@ -278,12 +278,9 @@ class ZolSpider(RedisSpider):
         picType = response.meta['picType']
         if picType == 0:
             wholecate = response.xpath('//div[@class="cate-item color-cate-item"]//li')
-            # print(wholecate.xpath('a/text()').extract())
-            cateNames = response.xpath('//ul[@class="pics-category-list color-cate-list"]/li/a/text()').extract()
         else:
             wholecate = response.xpath('//div[@class="cate-item"]//li')[1:]
-            # print(wholecate.xpath('a/text()').extract())
-            cateNames = response.xpath('//ul[@class="pics-category-list"]/li/a/text()').extract()[1:]
+
         activeNum = response.meta['activeNum']
         for i in range(1, len(wholecate) + 1):
             if wholecate[i-1].xpath('a[@class="active"]') != []:
@@ -360,6 +357,7 @@ class ZolSpider(RedisSpider):
                             .xpath('//ul[@class="content-list"]/li[@class=" clearfix"]')
                         # print(etree.tostring(page).decode("GBK"))
 
+                    # 文章信息分为两种，在评测行情页面导航栏超过两个选项时，未激活的页面内容存放在<textarea>标签下。
                     articleNums[i] = len(articleSet)
                     # print(nodeIds[i], articleNums[i])
                     articleInfos = []
@@ -373,23 +371,25 @@ class ZolSpider(RedisSpider):
                             artRecord['articleLink'] = allInfo.xpath('a/@href').extract_first()
                             artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')\
                                 .extract_first()
-                            artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src').extract_first()\
+                            artRecord['articlePic'] = allInfo.xpath('a/span[@class="img"]/img/@src').extract_first()\
                                                                     .replace('_200x150', '')
                             artRecord['articlePara'] = allInfo.xpath('p/text()').extract_first()
                             artRecord['articleDate'] = allInfo\
                                 .xpath('div[@class="article-source clearfix"]/span[@class="article-date"]/text()')\
                                 .extract_first()
                             if allInfo.xpath\
-                                        ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()') \
+                               ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()') \
                                     == [] or allInfo \
-                                    .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()') \
+                                    .xpath(
+                                         'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
                                     == []:
                                 artRecord['articleAuthor'] = 'Anonymous'
                             else:
                                 artRecord['articleAuthor'] = allInfo.xpath\
-                                        ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
+                                    ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
                                         .extract_first() + allInfo \
-                                        .xpath('div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
+                                        .xpath(
+                                        'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
                                         .extract_first()
                             articleInfos.append(artRecord)
 
@@ -401,7 +401,7 @@ class ZolSpider(RedisSpider):
                             artRecord['articleID'] = j
                             artRecord['articleLink'] = allInfo.xpath('a/@href')[0]
                             artRecord['articleTitle'] = allInfo.xpath('div[@class="article-title"]/a/text()')[0]
-                            artRecord['articlePic'] = allInfo.xpath('//span[@class="img"]/img/@src')[0]\
+                            artRecord['articlePic'] = allInfo.xpath('a/span[@class="img"]/img/@src')[0]\
                                                                     .replace('_200x150', '')
                             artRecord['articlePara'] = allInfo.xpath('p/text()')[0]
                             artRecord['articleDate'] = allInfo\
@@ -414,10 +414,10 @@ class ZolSpider(RedisSpider):
                                 artRecord['articleAuthor'] = 'Anonymous'
                             else:
                                 artRecord['articleAuthor'] = allInfo.xpath \
-                                    ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()') \
+                                    ('div[@class="article-source clearfix"]/div[@class="article-author"]/span/text()')\
                                     [0] + allInfo \
                                     .xpath(
-                                    'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()') \
+                                    'div[@class="article-source clearfix"]/div[@class="article-author"]/a/text()')\
                                     [0]
                             articleInfos.append(artRecord)
 
@@ -492,6 +492,7 @@ class ZolSpider(RedisSpider):
                                      , 'imgitem': copy.deepcopy(imgitem)},
                                      callback=self.news_parse_page, dont_filter=True)
         else:
+            # 递归处理所有图片单独展示的页面
             if imgitem['imgUrls'][cate[j]][i][0] == '/':
                 imgitem['imgUrls'][cate[j]][i] = prefix + imgitem['imgUrls'][cate[j]][i]
             yield SplashRequest(imgitem['imgUrls'][cate[j]][i],
@@ -516,6 +517,7 @@ class ZolSpider(RedisSpider):
         for j in range(len(imgitem['imgUrls'])):
             for link in imgitem['imgUrls'][cate[j]]:
                 piclinks.append(link)
+        # imgitem的内容全部传给item的phonePic项
         item['phonePic'] = piclinks
         # print(item['phoneID'])
         yield item

@@ -11,7 +11,6 @@ from scrapy.loader.processors import MapCompose, TakeFirst, Join
 
 
 class ZolItem(scrapy.Item):
-
     # basicInfo
     phoneID = scrapy.Field()        # 手机编号
     phoneName = scrapy.Field()      # 手机名称

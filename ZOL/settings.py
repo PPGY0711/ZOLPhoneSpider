@@ -93,7 +93,7 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'ZOL.pipelines.ZolPipeline': 100,
-    'ZOL.pipelines.MongoPipeline': 200,
+    # 'ZOL.pipelines.MongoPipeline': 200,
     # 'ZOL.pipelines.ImgDownLoadPipeline': 300,
     'scrapy_redis.pipelines.RedisPipeline': 400,
 }
